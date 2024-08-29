@@ -293,13 +293,25 @@ async def copy_message(message: Message, target: dict, edited=False,
         messages = await user.get_media_group(source, message.id)
         media_input = []
         downloaded_media = []
+        downloaded_video_thumbs = []
 
         for msg_media in messages:
             text = await replace_words(forwarder, msg_media.caption, True)
             entities = msg_media.caption_entities
+            video = None
+            thumb_path = None
             # If the chat has protected content, download the media to send it
             if msg_media.chat.has_protected_content:
                 path = await msg_media.download()
+
+                # Add video thumbs info
+                if msg_media.video:
+                    video = msg_media.video
+                    if video.thumbs:
+                        thumb = video.thumbs[0] # choice the first thumb
+                        thumb_path = await message.download(thumb.file_id)
+                        logger.debug(f"Video thumbs downloaded to {thumb_path}")
+                        downloaded_video_thumbs.append(thumb_path)
             # If the chat has not protected content, get the file_id to send it
             else:
                 path = await get_media_type(msg_media)
@@ -308,7 +320,8 @@ async def copy_message(message: Message, target: dict, edited=False,
             if msg_media.media is MessageMediaType.PHOTO:
                 media_input.append(InputMediaPhoto(path, text))
             elif msg_media.media is MessageMediaType.VIDEO:
-                media_input.append(InputMediaVideo(path, caption=text))
+                duration = video.duration if video else None
+                media_input.append(InputMediaVideo(path, caption=text, duration=duration, thumb=thumb_path))
             elif msg_media.media is MessageMediaType.AUDIO:
                 media_input.append(InputMediaAudio(path, caption=text))
             elif msg_media.media is MessageMediaType.DOCUMENT:
@@ -349,6 +362,10 @@ async def copy_message(message: Message, target: dict, edited=False,
             if os.path.isfile(path):
                 logger.debug(f"Removing file {path}")
                 os.remove(path)
+        for path in downloaded_video_thumbs:
+            if os.path.isfile(path):
+                logger.debug(f'Removing thumb file {path}')
+                os.remove(path)
 
     elif message.media is not None:
         downloadable_media = [MessageMediaType.PHOTO, MessageMediaType.VIDEO,
@@ -372,6 +389,15 @@ async def copy_message(message: Message, target: dict, edited=False,
                 logger.debug(f"{from_user} has protected content, "
                              "downloading media")
                 path = await message.download()
+
+                # Add video thumbs info
+                if message.video:
+                    video = message.video
+                    thumb_path = None
+                    if video.thumbs:
+                        thumb = video.thumbs[0] # choice the first thumb
+                        thumb_path = await message.download(thumb.file_id)
+                        logger.debug(f"Video thumbs downloaded to {thumb_path}")
             else:
                 logger.debug(f"{from_user} has no protected content, "
                              "using file_id")
@@ -400,7 +426,7 @@ async def copy_message(message: Message, target: dict, edited=False,
             if message.media is MessageMediaType.PHOTO:
                 media = InputMediaPhoto(path, text)
             elif message.media is MessageMediaType.VIDEO:
-                media = InputMediaVideo(path, caption=text)
+                media = InputMediaVideo(path, caption=text, duration=video.duration, thumb=thumb_path)
             elif message.media is MessageMediaType.AUDIO:
                 media = InputMediaAudio(path, caption=text)
             elif message.media is MessageMediaType.DOCUMENT:
@@ -455,7 +481,7 @@ async def copy_message(message: Message, target: dict, edited=False,
             elif message.media is MessageMediaType.VIDEO:
                 msg = await user.send_video(target, path, text,
                                             caption_entities=entities,
-                                            reply_to_message_id=reply_id)
+                                            reply_to_message_id=reply_id, duration=video.duration, thumb=thumb_path)
             elif message.media is MessageMediaType.ANIMATION:
                 msg = await user.send_animation(target, path, text,
                                                 caption_entities=entities,
@@ -557,6 +583,9 @@ async def copy_message(message: Message, target: dict, edited=False,
             if os.path.isfile(path):
                 logger.debug(f"Removing file {path}")
                 os.remove(path)
+        if os.path.isfile(thumb_path):
+            logger.debug(f'Removing thumb file {thumb_path}')
+            os.remove(thumb_path)
 
     # If the message is just a text message
     else:
