@@ -426,7 +426,7 @@ async def copy_message(message: Message, target: dict, edited=False,
             if message.media is MessageMediaType.PHOTO:
                 media = InputMediaPhoto(path, text)
             elif message.media is MessageMediaType.VIDEO:
-                media = InputMediaVideo(path, caption=text, duration=video.duration, thumb=thumb_path)
+                media = InputMediaVideo(path, caption=text)
             elif message.media is MessageMediaType.AUDIO:
                 media = InputMediaAudio(path, caption=text)
             elif message.media is MessageMediaType.DOCUMENT:
@@ -481,7 +481,7 @@ async def copy_message(message: Message, target: dict, edited=False,
             elif message.media is MessageMediaType.VIDEO:
                 msg = await user.send_video(target, path, text,
                                             caption_entities=entities,
-                                            reply_to_message_id=reply_id, duration=video.duration, thumb=thumb_path)
+                                            reply_to_message_id=reply_id)
             elif message.media is MessageMediaType.ANIMATION:
                 msg = await user.send_animation(target, path, text,
                                                 caption_entities=entities,
