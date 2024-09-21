@@ -148,6 +148,10 @@ async def replace_words(target: dict, text: str,
         logger.debug("Text is None, returning an empty string")
         return ""
 
+    # Remove markdown links from the text
+    if target["disable_links"]:
+        text = re.sub(r"\[(.*?)\](\(.*?\))", r"\1", text)
+
     logger.debug(f"Replace mode is: {target['replace_words_mode']}")
     for word in words:
         # Escape special characters
@@ -549,7 +553,7 @@ async def copy_message(message: Message, target: dict, edited=False,
 
     # If the message is just a text message
     else:
-        text = await replace_words(forwarder, message.text)
+        text = await replace_words(forwarder, message.text.markdown)
         entities = message.entities
         reply_id = None
 
@@ -592,7 +596,7 @@ async def copy_message(message: Message, target: dict, edited=False,
                 return
 
         else:
-            msg = await user.send_message(target, text, entities=entities,
+            msg = await user.send_message(target, text,
                                           reply_to_message_id=reply_id)
             to_user = msg.chat.title if msg.chat.title else msg.chat.first_name
             logger.info(f"Sending message from {from_user} to {to_user}")

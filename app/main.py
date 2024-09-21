@@ -188,6 +188,10 @@ async def on_callback_query(client: Client, callback_query: CallbackQuery):
         id_hash = data.split("_")[-1]
         await toggle_send_text_only(message, id_hash)
 
+    if data.startswith("disable_links_"):
+        id_hash = data.split("_")[-1]
+        await toggle_disable_links(message, id_hash)
+
     if data.startswith("translation_"):
         id_hash = data.split("_")[-1]
         await translation(message, id_hash)
@@ -275,6 +279,9 @@ async def forwarder(message: Message, forwarder_id: str) -> None:
     send_text_only = ("🔄 Solo enviar texto: activado"
                       if forwarder["send_text_only"]
                       else "🔄 Solo enviar texto: desactivado")
+    disable_links = ("🔗 Desactivar enlaces: activado"
+                     if forwarder.get("disable_links", False)
+                     else "🔗 Desactivar enlaces: desactivado")
     translation = "🗣️ Traducción"
 
     # Create the keyboard
@@ -288,6 +295,7 @@ async def forwarder(message: Message, forwarder_id: str) -> None:
         [{blocked_words: f"blocked_words_{forwarder_id}"}],
         [{source_chats: f"source_chats_{forwarder_id}"}],
         [{send_text_only: f"send_text_only_{forwarder_id}"}],
+        [{disable_links: f"disable_links_{forwarder_id}"}],
         [{translation: f"translation_{forwarder_id}"}],
         [{"ℹ️ Información": f"info_{forwarder_id}"}],
         [{"🗑️ Eliminar": f"delete_forwarder_{forwarder_id}"}],
@@ -831,6 +839,17 @@ async def toggle_send_text_only(message: Message, forwarder_id: str):
     forwarder_dict = await forwardings.get_forwarder(forwarder_id)
 
     forwarder_dict["send_text_only"] = not forwarder_dict["send_text_only"]
+    await forwardings.update_forwarder(forwarder_dict)
+    await forwarder(message, forwarder_id)
+
+
+async def toggle_disable_links(message: Message, forwarder_id: str):
+    """ Toggle the disable links of the forwarder. """
+    # Get the forwarder
+    forwarder_dict = await forwardings.get_forwarder(forwarder_id)
+
+    forwarder_dict["disable_links"] = not forwarder_dict.get("disable_links",
+                                                             False)
     await forwardings.update_forwarder(forwarder_dict)
     await forwarder(message, forwarder_id)
 
