@@ -288,8 +288,11 @@ async def copy_message(message: Message, target: dict, edited=False,
         downloaded_media = []
 
         for msg_media in messages:
-            text = await replace_words(forwarder, msg_media.caption, True)
-            entities = msg_media.caption_entities
+            if msg_media.caption is not None:
+                text = await replace_words(forwarder,
+                                           msg_media.caption.markdown, True)
+            else:
+                text = ""
             # If the chat has protected content, download the media to send it
             if msg_media.chat.has_protected_content:
                 path = await msg_media.download()
@@ -323,7 +326,7 @@ async def copy_message(message: Message, target: dict, edited=False,
                 return
 
         if forwarder["send_text_only"]:
-            msg = await user.send_message(target, text, entities=entities,
+            msg = await user.send_message(target, text,
                                           reply_to_message_id=reply_id)
             await Messages.add_message_id(target, source, messages[0].id,
                                           msg.id)
@@ -350,8 +353,11 @@ async def copy_message(message: Message, target: dict, edited=False,
                               MessageMediaType.ANIMATION,
                               MessageMediaType.VIDEO_NOTE,
                               MessageMediaType.STICKER]
-        text = await replace_words(forwarder, message.caption, True)
-        entities = message.caption_entities
+        if message.caption is not None:
+            text = await replace_words(forwarder,
+                                       message.caption.markdown, True)
+        else:
+            text = ""
         reply_id = None
 
         if message.media in downloadable_media:
@@ -404,8 +410,7 @@ async def copy_message(message: Message, target: dict, edited=False,
             try:
                 if message.media is MessageMediaType.WEB_PAGE:
                     text = await replace_words(forwarder, message.text)
-                    msg = await user.edit_message_text(target, edit_id, text,
-                                                       entities=entities)
+                    msg = await user.edit_message_text(target, edit_id, text)
                     to_user = msg.chat.title if msg.chat.title else\
                         msg.chat.first_name
                     logger.info(f"Editing media from {from_user} to {to_user}")
@@ -414,9 +419,7 @@ async def copy_message(message: Message, target: dict, edited=False,
                     to_user = msg.chat.title if msg.chat.title else\
                         msg.chat.first_name
                     logger.info(f"Editing media from {from_user} to {to_user}")
-                    if entities is not None:
-                        await user.edit_message_caption(
-                            target, edit_id, text, caption_entities=entities)
+                    await user.edit_message_caption(target, edit_id, text)
             except MessageIdInvalid:
                 logger.error("The media cannot be edited, because it does " +
                              "not exist in the target chat")
@@ -428,34 +431,28 @@ async def copy_message(message: Message, target: dict, edited=False,
 
         else:
             if forwarder["send_text_only"] and text != "":
-                msg = await user.send_message(target, text, entities=entities,
+                msg = await user.send_message(target, text,
                                               reply_to_message_id=reply_id)
             elif message.media is MessageMediaType.PHOTO:
                 msg = await user.send_photo(target, path, text,
-                                            caption_entities=entities,
                                             reply_to_message_id=reply_id)
             elif message.media is MessageMediaType.AUDIO:
                 msg = await user.send_audio(target, path, text,
-                                            caption_entities=entities,
                                             reply_to_message_id=reply_id)
             elif message.media is MessageMediaType.DOCUMENT:
                 msg = await user.send_document(target, path, caption=text,
-                                               caption_entities=entities,
                                                reply_to_message_id=reply_id)
             elif message.media is MessageMediaType.STICKER:
                 msg = await user.send_sticker(target, path,
                                               reply_to_message_id=reply_id)
             elif message.media is MessageMediaType.VIDEO:
                 msg = await user.send_video(target, path, text,
-                                            caption_entities=entities,
                                             reply_to_message_id=reply_id)
             elif message.media is MessageMediaType.ANIMATION:
                 msg = await user.send_animation(target, path, text,
-                                                caption_entities=entities,
                                                 reply_to_message_id=reply_id)
             elif message.media is MessageMediaType.VOICE:
                 msg = await user.send_voice(target, path, text,
-                                            caption_entities=entities,
                                             reply_to_message_id=reply_id)
             elif message.media is MessageMediaType.VIDEO_NOTE:
                 msg = await user.send_video_note(target, path,
@@ -485,9 +482,8 @@ async def copy_message(message: Message, target: dict, edited=False,
                 msg = await user.send_dice(target, emoji,
                                            reply_to_message_id=reply_id)
             elif message.media is MessageMediaType.WEB_PAGE:
-                entities = message.entities
                 text = await replace_words(forwarder, message.text)
-                msg = await user.send_message(target, text, entities=entities,
+                msg = await user.send_message(target, text,
                                               reply_to_message_id=reply_id)
             # Only will be sent if the poll type is regular
             elif message.media is MessageMediaType.POLL and\
@@ -554,7 +550,6 @@ async def copy_message(message: Message, target: dict, edited=False,
     # If the message is just a text message
     else:
         text = await replace_words(forwarder, message.text.markdown)
-        entities = message.entities
         reply_id = None
 
         if not forwarder["duplicated_text"]:
@@ -581,8 +576,7 @@ async def copy_message(message: Message, target: dict, edited=False,
             if target in msg_ids and origin_edit_id in msg_ids[target][source]:
                 edit_id = msg_ids[target][source][origin_edit_id]
             try:
-                msg = await user.edit_message_text(target, edit_id, text,
-                                                   entities=entities)
+                msg = await user.edit_message_text(target, edit_id, text)
                 to_user = msg.chat.title if msg.chat.title else\
                     msg.chat.first_name
                 logger.info(f"Editing message from {from_user} to {to_user}")
