@@ -148,9 +148,10 @@ async def replace_words(target: dict, text: str,
         logger.debug("Text is None, returning an empty string")
         return ""
 
-    # Remove markdown links from the text
+    # Remove links from the text
     if target["disable_links"]:
         text = re.sub(r"\[(.*?)\](\(.*?\))", r"\1", text)
+        text = re.sub(r"(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\b", "", text)  # noqa
 
     logger.debug(f"Replace mode is: {target['replace_words_mode']}")
     for word in words:
