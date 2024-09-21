@@ -150,22 +150,12 @@ async def replace_words(target: dict, text: str,
 
     logger.debug(f"Replace mode is: {target['replace_words_mode']}")
     for word in words:
+        # Escape special characters
+        escaped_word = re.escape(word)
+
         # Replace only boundary words matches
         if target["replace_words_mode"] == "word_boundary_match":
-            sub_word = word
-            # If the word starts with
-            if word[0] in ["@", "#", "$"]:
-                sub_word = word[1:]
-                symbol = word[0]
-                pattern = r"[%s]\b%s\b" % (symbol, sub_word)
-            # If the word ends with
-            elif word[-1] in ["@", "#", "$"]:
-                sub_word = word[:-1]
-                symbol = word[-1]
-                pattern = r"\b%s[%s]" % (sub_word, symbol)
-            else:
-                pattern = r"\b%s\b" % word
-            text = re.sub(pattern, words[word], text, flags=re.I)
+            text = re.sub(escaped_word, words[word], text, flags=re.I)
         # Replace any match
         else:
             text = re.sub(word, words[word], text, flags=re.I)
