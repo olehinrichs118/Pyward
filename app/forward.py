@@ -144,14 +144,16 @@ async def replace_words(target: dict, text: str,
                         is_caption: bool = False) -> str:
     """Replace words and select text with regex"""
     words = target["replace_words"]
+    url_pattern = re.compile(r"(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\b") # noqa
+    url_markdown_pattern = re.compile(r"\[(.*?)\](\(.*?\))")
     if text is None:
         logger.debug("Text is None, returning an empty string")
         return ""
 
     # Remove links from the text
     if target["disable_links"]:
-        text = re.sub(r"\[(.*?)\](\(.*?\))", r"\1", text)
-        text = re.sub(r"(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\b", "", text)  # noqa
+        text = re.sub(url_markdown_pattern, r"\1", text)
+        text = re.sub(url_pattern, "", text)
 
     logger.debug(f"Replace mode is: {target['replace_words_mode']}")
     for word in words:
@@ -160,7 +162,12 @@ async def replace_words(target: dict, text: str,
 
         # Replace only boundary words matches
         if target["replace_words_mode"] == "word_boundary_match":
-            text = re.sub(escaped_word, words[word], text, flags=re.I)
+            # If the text has a link and the word is inside the link
+            if re.search(url_pattern, text):
+                text = re.sub(
+                    fr"\[{escaped_word}\](\(.*?\))", words[word], text)
+            else:
+                text = re.sub(escaped_word, words[word], text, flags=re.I)
         # Replace any match
         else:
             text = re.sub(word, words[word], text, flags=re.I)
