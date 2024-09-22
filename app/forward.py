@@ -162,12 +162,9 @@ async def replace_words(target: dict, text: str,
 
         # Replace only boundary words matches
         if target["replace_words_mode"] == "word_boundary_match":
-            # If the text has a link and the word is inside the link
-            if re.search(url_pattern, text):
-                text = re.sub(
-                    fr"\[{escaped_word}\](\(.*?\))", words[word], text)
-            else:
-                text = re.sub(escaped_word, words[word], text, flags=re.I)
+            text = re.sub(
+                fr"\[{escaped_word}\](\(.*?\))|{escaped_word}",
+                words[word], text)
         # Replace any match
         else:
             text = re.sub(word, words[word], text, flags=re.I)
