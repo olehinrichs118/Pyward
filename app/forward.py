@@ -294,8 +294,12 @@ async def copy_message(message: Message, target: dict, edited=False,
 
         for msg_media in messages:
             if msg_media.caption is not None:
-                text = await replace_words(forwarder,
-                                           msg_media.caption.markdown, True)
+                if hasattr(msg_media.caption, "markdown"):
+                    text_msg = msg_media.caption.markdown
+                else:
+                    text_msg = msg_media.caption
+                text = await replace_words(forwarder, text_msg, True)
+
             else:
                 text = ""
             # If the chat has protected content, download the media to send it
@@ -359,8 +363,11 @@ async def copy_message(message: Message, target: dict, edited=False,
                               MessageMediaType.VIDEO_NOTE,
                               MessageMediaType.STICKER]
         if message.caption is not None:
-            text = await replace_words(forwarder,
-                                       message.caption.markdown, True)
+            if hasattr(message.caption, "markdown"):
+                text_msg = message.caption.markdown
+            else:
+                text_msg = message.caption
+            text = await replace_words(forwarder, text_msg, True)
         else:
             text = ""
         reply_id = None
@@ -554,7 +561,11 @@ async def copy_message(message: Message, target: dict, edited=False,
 
     # If the message is just a text message
     else:
-        text = await replace_words(forwarder, message.text.markdown)
+        if hasattr(message.text, "markdown"):
+            text_msg = message.text.markdown
+        else:
+            text_msg = message.text
+        text = await replace_words(forwarder, text_msg, True)
         reply_id = None
 
         if not forwarder["duplicated_text"]:
