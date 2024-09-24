@@ -116,6 +116,7 @@ class Forwarding:
                 "duplicated_text": False,
                 "send_text_only": False,
                 "translate": False,
+                "disable_links": False,
                 "translate_to": "en",
                 "translate_from": "auto",
                 "translate_show_original": False,

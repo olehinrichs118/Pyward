@@ -216,6 +216,7 @@ async def on_callback_query(client: Client, callback_query: CallbackQuery):
         lang_code = data.split("_")[-2]
         await translate_from_set(message, id_hash, lang_code)
 
+
     await callback_query.answer()
 
 
@@ -289,7 +290,7 @@ async def forwarder(message: Message, forwarder_id: str) -> None:
         [{name: f"name_{forwarder_id}"}],
         [{enabled: f"enabled_{forwarder_id}"}],
         [{reply: f"reply_{forwarder_id}"}],
-        [{duplicated_text: f"duplicate_text_{forwarder_id}"}],
+        [{duplicated_text: f"duplicated_text_{forwarder_id}"}],
         [{forwarding_mode: f"forwarding_mode_{forwarder_id}"}],
         [{replace_words: f"replace_words_{forwarder_id}"}],
         [{blocked_words: f"blocked_words_{forwarder_id}"}],

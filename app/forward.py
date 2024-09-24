@@ -151,7 +151,7 @@ async def replace_words(target: dict, text: str,
         return ""
 
     # Remove links from the text
-    if target["disable_links"]:
+    if target.get("disable_links", False):
         text = re.sub(url_markdown_pattern, r"\1", text)
         text = re.sub(url_pattern, "", text)
 
